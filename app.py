@@ -10,7 +10,7 @@ def fetch_and_clean_stock(ticker):
     print(f"[*] 數據流水線啟動：自雲端採集 {ticker} 時間序列...")
 
     # 利用官方參數強制關閉多層索引 (multi_level_index=False)
-    df = yf.download(ticker, period="5d", multi_level_index=False)
+    df = yf.download(ticker, period="1mo", multi_level_index=False)
 
     if df.empty:
         print(f"[-] 核心錯誤：{ticker} 數據採集結果為空")
