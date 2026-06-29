@@ -1,158 +1,586 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>股票查詢與視覺化系統</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        .quick-btn { transition: all 0.2s; }
-        .quick-btn:hover { transform: translateY(-2px); }
+
+        body{
+            background:linear-gradient(135deg,#eef5ff,#f8fbff);
+            font-family:"Microsoft JhengHei",sans-serif;
+        }
+
+        h1{
+            font-weight:700;
+            color:#1d3557;
+        }
+
+        .card{
+            border:none;
+            border-radius:18px;
+            box-shadow:0 8px 25px rgba(0,0,0,.08);
+        }
+
+        .quick-btn{
+            transition:.25s;
+            border-radius:12px;
+            font-weight:bold;
+        }
+
+        .quick-btn:hover{
+            transform:translateY(-3px);
+            box-shadow:0 6px 15px rgba(0,0,0,.15);
+        }
+
+        .input-group{
+            border-radius:15px;
+            overflow:hidden;
+        }
+
+        .form-control,
+        .form-select{
+            border:none;
+            box-shadow:none!important;
+        }
+
+        .btn-primary{
+            background:#0d6efd;
+            border:none;
+            transition:.25s;
+        }
+
+        .btn-primary:hover{
+            transform:translateY(-2px);
+            box-shadow:0 5px 15px rgba(13,110,253,.35);
+        }
+
+        #chartTitle{
+            color:#0d6efd;
+            font-weight:bold;
+        }
+
+        canvas{
+            animation:fadein .5s;
+        }
+
+        @keyframes fadein{
+
+            from{
+                opacity:0;
+            }
+
+            to{
+                opacity:1;
+            }
+
+        }
+
+        table{
+            font-size:15px;
+        }
+
+        tbody tr:hover{
+            background:#eef5ff;
+            transition:.2s;
+        }
+
+        .table-dark{
+            background:#1d3557;
+        }
+
+        .loading-box{
+
+            display:none;
+
+            text-align:center;
+
+            margin:20px;
+
+            font-size:18px;
+
+            color:#0d6efd;
+
+            font-weight:bold;
+
+        }
+
+        .spinner-border{
+
+            width:2rem;
+
+            height:2rem;
+
+        }
+
+        #alertBox{
+
+            display:none;
+
+        }
+
     </style>
+
 </head>
-<body class="bg-light">
 
-    <div class="container py-5">
-        <h1 class="text-center mb-2">📈股票查詢與視覺化系統</h1>
-        <div class="row justify-content-center mb-3">
-            <div class="col-md-10 text-center">
-                <div class="card shadow-sm p-3 bg-white rounded">
-                    <h6 class="text-muted mb-2 text-start fw-bold">🚀現有的快速動態查詢：</h6>
-                    <div class="d-flex flex-wrap gap-2 justify-content-start">
-                        <button class="btn btn-outline-primary quick-btn fw-bold" onclick="setTicker('2330.TW')">🏢 台積電 (2330)</button>
-                        <button class="btn btn-outline-success quick-btn fw-bold" onclick="setTicker('2317.TW')">🦊 鴻海 (2317)</button>
-                        <button class="btn btn-outline-danger quick-btn fw-bold" onclick="setTicker('2454.TW')">💎 聯發科 (2454)</button>
-                        <button class="btn btn-outline-warning text-dark quick-btn fw-bold" onclick="setTicker('0050.TW')">🇹🇼 元大台灣50 (0050)</button>
-                        <button class="btn btn-outline-info text-dark quick-btn fw-bold" onclick="setTicker('2303.TW')">⚡ 聯電 (2303)</button>
-                    </div>
+<body>
+
+<div class="container py-5">
+
+    <h1 class="text-center mb-2">
+        📈 股票查詢與視覺化系統
+    </h1>
+
+    <p class="text-center text-muted mb-4">
+        Yahoo Finance 即時資料 × Flask API × Chart.js
+    </p>
+
+    <div class="row justify-content-center mb-3">
+
+        <div class="col-md-10">
+
+            <div class="card p-3">
+
+                <h6 class="fw-bold text-secondary mb-3">
+
+                    🚀 現有快速查詢
+
+                </h6>
+
+                <div class="d-flex flex-wrap gap-2">
+
+                    <button class="btn btn-outline-primary quick-btn"
+                        onclick="setTicker('2330.TW')">
+
+                        🏢 台積電
+
+                    </button>
+
+                    <button class="btn btn-outline-success quick-btn"
+                        onclick="setTicker('2317.TW')">
+
+                        🦊 鴻海
+
+                    </button>
+
+                    <button class="btn btn-outline-danger quick-btn"
+                        onclick="setTicker('2454.TW')">
+
+                        💎 聯發科
+
+                    </button>
+
+                    <button class="btn btn-outline-warning quick-btn"
+                        onclick="setTicker('0050.TW')">
+
+                        🇹🇼 元大0050
+
+                    </button>
+
+                    <button class="btn btn-outline-info quick-btn"
+                        onclick="setTicker('2303.TW')">
+
+                        ⚡ 聯電
+
+                    </button>
+
                 </div>
+
             </div>
+
         </div>
 
-        <div class="row justify-content-center mb-4">
-            <div class="col-md-10">
-                <div class="input-group shadow-sm">
-                    <span class="input-group-text bg-secondary text-white">自訂查詢</span>
-                    <input type="text" id="tickerInput" class="form-control" placeholder="輸入其他股票代碼 (例如美股: AAPL, NVDA)" value="2330.TW">
-                    <button class="btn btn-primary" type="button" id="searchBtn">送出查詢</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="row justify-content-center">
-            <div class="col-md-10 bg-white p-4 rounded shadow-sm mb-4">
-                <h4 id="chartTitle" class="text-secondary text-center mb-2">正在載入數據...</h4>
-                <div style="position: relative; height:350px;">
-                    <canvas id="stockChart"></canvas>
-                </div>
-            </div>
-
-            <div class="col-md-10 bg-white p-4 rounded shadow-sm">
-                <h3 class="mb-3">原始數據 (Data Table)</h3>
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover text-center">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>日期 (Date)</th>
-                                <th>開盤價 (Open)</th>
-                                <th>最高價 (High)</th>
-                                <th>最低價 (Low)</th>
-                                <th>收盤價 (Close)</th>
-                                <th>成交量 (Volume)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="data-table-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <script>
-        let stockChartInstance = null; 
+    <div class="row justify-content-center mb-4">
 
-        // 快速切換代碼
-        function setTicker(tickerCode) {
-            document.getElementById('tickerInput').value = tickerCode;
-            loadStockData(tickerCode);
-        }
+        <div class="col-md-10">
 
-        function loadStockData(ticker) {
-            document.getElementById('chartTitle').innerText = `📊 正在查詢 ${ticker} 數據...`;
-            
-            fetch(`/api/stock?ticker=${ticker}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
+            <div class="input-group shadow">
 
-                    document.getElementById('chartTitle').innerText = `📈 ${ticker} 近期1個月股價走勢`;
-                    const dates = [];
-                    const closePrices = [];
-                    const tableBody = document.getElementById('data-table-body');
-                    tableBody.innerHTML = ""; 
+                <span class="input-group-text bg-primary text-white">
 
-                    data.forEach(row => {
-                        const dateVal = row.date || "無日期";
-                        const openVal = parseFloat(row.open || 0).toFixed(2);
-                        const highVal = parseFloat(row.high || 0).toFixed(2);
-                        const lowVal = parseFloat(row.low || 0).toFixed(2);
-                        const closeVal = parseFloat(row.close || 0).toFixed(2);
-                        const volumeVal = parseInt(row.volume || 0).toLocaleString();
+                    🔍 股票代碼
 
-                        dates.push(dateVal);
-                        closePrices.push(closeVal);
+                </span>
 
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${dateVal}</td>
-                            <td>${openVal}</td>
-                            <td>${highVal}</td>
-                            <td>${lowVal}</td>
-                            <td class="fw-bold text-danger">${closeVal}</td>
-                            <td>${volumeVal}</td>
-                        `;
-                        tableBody.appendChild(tr);
-                    });
+                <input
 
-                    if (stockChartInstance) {
-                        stockChartInstance.destroy();
-                    }
+                    type="text"
 
-                    const ctx = document.getElementById('stockChart').getContext('2d');
-                    stockChartInstance = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: dates,
-                            datasets: [{
-                                label: `${ticker} 收盤價`,
-                                data: closePrices,
-                                borderColor: 'rgb(54, 162, 235)',
-                                backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                                tension: 0.2,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
+                    id="tickerInput"
+
+                    class="form-control"
+
+                    value="2330.TW"
+
+                    placeholder="例如：2330.TW、AAPL、NVDA">
+
+                <select
+                    id="periodSelect"
+                    class="form-select"
+                    style="max-width:170px;">
+
+                    <option value="1mo">近1個月</option>
+
+                    <option value="3mo">近3個月</option>
+
+                    <option value="6mo">近6個月</option>
+
+                    <option value="1y">近1年</option>
+
+                </select>
+
+                <button
+
+                    class="btn btn-primary"
+
+                    id="searchBtn">
+
+                    查詢
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div
+        id="alertBox"
+        class="alert alert-danger text-center"
+        role="alert">
+    </div>
+
+    <div class="loading-box" id="loading">
+
+        <div class="spinner-border text-primary mb-2"></div>
+
+        <div>
+
+            正在取得 Yahoo Finance 股票資料...
+
+        </div>
+
+    </div>
+
+    <div class="row justify-content-center">
+
+        <div class="col-md-10">
+
+            <div class="card p-4 mb-4">
+
+                <h4
+                    id="chartTitle"
+                    class="text-center">
+
+                    正在載入資料...
+
+                </h4>
+
+                <div
+                    style="position:relative;height:380px;">
+
+                    <canvas id="stockChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-10">
+
+            <div class="card p-4">
+
+                <h3 class="mb-3">
+
+                    📄 原始股票資料
+
+                </h3>
+
+                <div class="table-responsive">
+
+                    <table
+                        class="table table-hover table-striped text-center align-middle">
+
+                        <thead class="table-dark">
+
+                        <tr>
+
+                            <th>日期</th>
+
+                            <th>開盤</th>
+
+                            <th>最高</th>
+
+                            <th>最低</th>
+
+                            <th>收盤</th>
+
+                            <th>成交量</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody id="data-table-body">
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    let stockChartInstance = null;
+
+// 快速切換股票
+function setTicker(tickerCode) {
+    document.getElementById("tickerInput").value = tickerCode;
+    loadStockData(tickerCode);
+}
+
+function showLoading(show = true) {
+    document.getElementById("loading").style.display = show ? "block" : "none";
+}
+
+function showError(message) {
+    const alertBox = document.getElementById("alertBox");
+
+    if (!message) {
+        alertBox.style.display = "none";
+        alertBox.innerHTML = "";
+        return;
+    }
+
+    alertBox.innerHTML = message;
+    alertBox.style.display = "block";
+}
+
+function loadStockData(ticker) {
+
+    const period = document.getElementById("periodSelect").value;
+
+    showError("");
+    showLoading(true);
+
+    document.getElementById("chartTitle").innerText =
+        `📊 正在查詢 ${ticker}...`;
+
+    fetch(`/api/stock?ticker=${ticker}&period=${period}`)
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            showLoading(false);
+
+            if (data.error) {
+
+                showError(data.error);
+
+                return;
+            }
+
+            document.getElementById("chartTitle").innerText =
+                `📈 ${ticker} (${period}) 股價走勢`;
+
+            const dates = [];
+            const closePrices = [];
+
+            const tableBody = document.getElementById("data-table-body");
+
+            tableBody.innerHTML = "";
+
+            data.forEach(row => {
+
+                const dateVal = row.date || "";
+
+                const openVal = Number(row.open || 0);
+
+                const highVal = Number(row.high || 0);
+
+                const lowVal = Number(row.low || 0);
+
+                const closeVal = Number(row.close || 0);
+
+                const volumeVal = Number(row.volume || 0);
+
+                dates.push(dateVal);
+
+                closePrices.push(closeVal);
+
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+                    <td>${dateVal}</td>
+                    <td>${openVal.toFixed(2)}</td>
+                    <td>${highVal.toFixed(2)}</td>
+                    <td>${lowVal.toFixed(2)}</td>
+                    <td class="fw-bold text-danger">${closeVal.toFixed(2)}</td>
+                    <td>${volumeVal.toLocaleString()}</td>
+                `;
+
+                tableBody.appendChild(tr);
+
+            });
+
+            if (stockChartInstance) {
+                stockChartInstance.destroy();
+            }
+
+            const ctx = document
+                .getElementById("stockChart")
+                .getContext("2d");
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+
+            gradient.addColorStop(0, "rgba(13,110,253,.35)");
+            gradient.addColorStop(1, "rgba(13,110,253,0)");
+
+            stockChartInstance = new Chart(ctx, {
+
+                type: "line",
+
+                data: {
+
+                    labels: dates,
+
+                    datasets: [
+
+                        {
+
+                            label: `${ticker} 收盤價`,
+
+                            data: closePrices,
+
+                            borderColor: "#0d6efd",
+
+                            backgroundColor: gradient,
+
+                            fill: true,
+
+                            tension: 0.35,
+
+                            pointRadius: 4,
+
+                            pointHoverRadius: 7,
+
+                            pointBackgroundColor: "#0d6efd"
+
                         }
-                    });
-                })
-                .catch(error => console.error('Fetch 錯誤:', error));
-        }
 
-        document.getElementById('searchBtn').addEventListener('click', () => {
-            const ticker = document.getElementById('tickerInput').value.trim();
-            if(ticker) loadStockData(ticker);
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    interaction: {
+
+                        intersect: false,
+
+                        mode: "index"
+
+                    },
+
+                    plugins: {
+
+                        legend: {
+
+                            display: true
+
+                        }
+
+                    },
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: false
+
+                        }
+
+                    }
+
+                }
+
+            });
+
+        })
+
+        .catch(error => {
+
+            showLoading(false);
+
+            console.error(error);
+
+            showError("⚠️ 無法取得股票資料，請稍後再試。");
+
         });
 
-        document.addEventListener("DOMContentLoaded", () => {
-            loadStockData("2330.TW");
-        });
-    </script>
+}
+
+document.getElementById("searchBtn").addEventListener("click", () => {
+
+    const ticker =
+        document.getElementById("tickerInput").value.trim();
+
+    if (ticker) {
+        loadStockData(ticker);
+    }
+
+});
+
+document.getElementById("tickerInput").addEventListener("keypress", e => {
+
+    if (e.key === "Enter") {
+
+        document.getElementById("searchBtn").click();
+
+    }
+
+});
+
+document.getElementById("periodSelect").addEventListener("change", () => {
+
+    const ticker =
+        document.getElementById("tickerInput").value.trim();
+
+    if (ticker) {
+        loadStockData(ticker);
+    }
+
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    loadStockData("2330.TW");
+
+});
+</script>
+
 </body>
+
 </html>
